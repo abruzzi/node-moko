@@ -1,0 +1,31 @@
+{
+  "name": "node-moko",
+  "version": "0.1.0",
+  "description": "node-moko is used for build restful API in secs, for testing puropse",
+  "main": "lib/moko.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abruzzi/node-moko"
+  },
+  "keywords": [
+    "moko",
+    "restful",
+    "moco"
+  ],
+  "author": "Qiu Juntao <juntao.qiu@gmail.com> (http://icodeit.org/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abruzzi/node-moko/issues"
+  },
+  "bin": {
+    "mokoup": "bin/mokoup"
+  },
+  "dependencies": {
+    "optimist": "~0.6.0",
+    "ejs": "~0.8.5",
+    "inflection": "1.3.5"
+  }
+}

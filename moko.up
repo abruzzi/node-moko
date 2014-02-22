@@ -1,0 +1,11 @@
+{
+    "user": {
+        "id": "integer",
+        "description": "string"
+    },
+    "listing": {
+        "title": "string",
+        "address": "string",
+        "postcode": "integer"
+    }
+}

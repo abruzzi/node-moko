@@ -1,0 +1,113 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var os = require('os');
+var url = require('url');
+var http = require('http');
+var path = require('path');
+var optimist = require('optimist');
+var childProcess = require('child_process');
+
+var moko = require(__dirname + '/../lib/moko.js');
+
+var MOCO_DIR = path.resolve(__dirname, 'moco');
+
+if (!fs.existsSync(MOCO_DIR) || !fs.statSync(MOCO_DIR).isDirectory()) {
+    fs.mkdirSync(MOCO_DIR);
+}
+
+var moco = {
+    name: 'moco-runner-standalone.jar',
+    url: 'http://repo1.maven.org/maven2/com/github/dreamhead/moco-runner/0.9.1/moco-runner-0.9.1-standalone.jar',
+    exists: function() {
+        return fs.existsSync(path.join(MOCO_DIR, this.name));
+    }
+};
+
+/**
+ * Function to download file using HTTP.get.
+ * Thanks to http://www.hacksparrow.com/using-node-js-to-download-files.html
+ * for the outline of this code.
+ */
+var httpGetFile = function(fileUrl, fileName, outputDir, callback) {
+  console.log('downloading ' + fileUrl + '...');
+  var options = {
+    host: url.parse(fileUrl).host,
+    port: 80,
+    path: url.parse(fileUrl).pathname
+  };
+
+  var filePath = path.join(outputDir, fileName);
+  var file = fs.createWriteStream(filePath);
+
+  http.get(options, function(res) {
+    res.on('data', function(data) {
+      file.write(data);
+    }).on('end', function() {
+      file.end(function() {
+        console.log(fileName + ' downloaded to ' + filePath);
+        if (callback) {
+          callback(filePath);
+        }
+      });
+    });
+  });
+};
+
+var downloadMoco = function(callback) {
+    httpGetFile(moco.url, moco.name, MOCO_DIR, callback);
+};
+
+var cli = optimist.
+    usage('Usage: mokoup <command>\n' +
+        'Commands:\n' +
+        '  server: startup the underlying moco server\n' +
+        '  generate: generate moco configuration and restful resources');
+
+var argv = cli.
+    check(function(arg) {
+      if (arg._.length != 1) {
+        throw 'Please specify one command';
+      }
+    }).argv;
+
+
+function runMocoServer() {
+    var args = ['-jar', path.join(MOCO_DIR, moco.name), 'start', '-p', '12306', '-c', 'conf/moco.conf.json'];
+
+    var mocoProcess = childProcess.spawn('java', args, {
+        stdio: 'inherit'
+    });
+
+    console.log('mocoProcess.pid: ' + mocoProcess.pid);
+
+    mocoProcess.on('exit', function(code) {
+      console.log('Moco Server has exited with code ' + code);
+      process.exit(code);
+    });
+
+    process.stdin.resume();
+    process.stdin.on('data', function(chunk) {
+      console.log('Attempting to shut down moco nicely');
+    });
+
+    process.on('SIGINT', function() {
+      console.log('Staying alive until the moco process exits');
+    });
+}
+
+switch (argv._[0]) {
+  case 'server':
+    if (!moco.exists()) {
+      downloadMoco(runMocoServer);
+    } else {
+      runMocoServer();
+    }
+    break;
+  case 'generate':
+    moko.generateResources();
+    break;
+  default:
+    console.error('Invalid command');
+    optimist.showHelp();
+}
